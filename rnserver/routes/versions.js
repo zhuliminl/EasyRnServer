@@ -14,11 +14,17 @@ var storage = multer.diskStorage({
     cb(null, file.fieldname + '_' + Date.now() + path.extname(file.originalname));
   }
 })
-var upload = multer({ storage: storage, limits: { fileSize: 100000000 } }).any()
+// var upload = multer({ storage: storage, limits: { fileSize: 100000000 } }).any()
+var upload = multer({ storage: storage, limits: { fileSize: 100000000000 } }).single('bundle')
 
 router.post('/bundleUpload', upload, function (req, res, next) {
   const { body = {} } = req
-  console.log('body', req.body)
+  const { file = [] } = req
+  console.log('saul Body', body)
+  console.log('saul UPLOAD _________', file)
+  if (JSON.stringify(file) === '[]') {
+    return res.json({ code: 1001, message: '上传文件为空', data: body })
+  }
   res.json({ code: 200, message: '成功上传 RN 包 ', data: body })
 });
 
