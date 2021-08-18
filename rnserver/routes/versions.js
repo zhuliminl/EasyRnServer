@@ -14,7 +14,14 @@ const BUNDLE_PATH = './bundle'
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const versionCode = new Date().getTime()
+    const { body } = req
+    console.log('params', req.params)
+    console.log('query', req.query)
+    console.log('file', file)
+    const { biz = 'unknown-biz' } = body
+    const versionCode = `${biz}-${new Date().getTime()}`
+    // const versionCode = new Date().getTime()
+    // console.log('########', versionCode)
     const _bundlePath = `${tmpPath}/${versionCode}`
     const filename = file.fieldname + path.extname(file.originalname)
     fs.mkdirSync(_bundlePath, { recursive: true })
@@ -33,8 +40,11 @@ var storage = multer.diskStorage({
   }
 })
 
+
+
 var upload = multer({ storage: storage, limits: { fileSize: 100000000000 } }).single('bundle')
-router.post('/bundleUpload', upload, transformToPackage, function (req, res, next) {
+// var upload = multer({ storage: storage, limits: { fileSize: 100000000000 } }).any()
+router.post('/bundleUpload', passBody, upload, transformToPackage, function (req, res, next) {
   const { body = {} } = req
   const { file = [] } = req
   if (JSON.stringify(file) === '[]') {
@@ -61,6 +71,11 @@ router.get('/bundleCheck', async function (req, res, next) {
     }
   })
 })
+
+function passBody(req, res, next) {
+  console.log('saul body', req.body)
+  next()
+}
 
 function transformToPackage(req, res, next) {
   const { passData = {} } = req
