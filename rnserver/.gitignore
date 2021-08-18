@@ -2,3 +2,6 @@ node_modules
 bundles
 tmp
 .DS_Store
+yarn.lock
+.DS_Store
+package-lock.json
