@@ -1,0 +1,13 @@
+{
+  "_bundlePath": "./tmp/WelecomPage_20210820021502",
+  "versionCode": "WelecomPage_20210820021502",
+  "filename": "bundle.zip",
+  "body": {
+    "biz": "WelecomPage",
+    "appKey": "rn_ts",
+    "author": "xiaoshitou",
+    "token": "token",
+    "bundleBuildPath": "./../bundle.zip",
+    "uploadUrl": "http://localhost:3000/rn/bundleUpload"
+  }
+}

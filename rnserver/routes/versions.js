@@ -5,12 +5,13 @@ const Fse = require('fs-extra')
 const multer = require('multer')
 var AdmZip = require("adm-zip");
 const moment = require('moment')
+const rmdir = require('rimraf');
 
 var router = express.Router();
 
 
 const tmpPath = './tmp'
-const BUNDLE_PATH = './bundle'
+const BUNDLE_PATH = './bizBundles'
 
 
 var storage = multer.diskStorage({
@@ -84,11 +85,32 @@ function transformToPackage(req, res, next) {
     filename = '',
   } = passData
   const bundlePath = `${BUNDLE_PATH}/${versionCode}`
-  fs.mkdirSync(bundlePath, { recursive: true })
-  fs.writeFileSync(`${bundlePath}/desc.json`, JSON.stringify({ ...passData }, null, 2));
+  const iosPath = bundlePath + '/ios'
+  const androidPath = bundlePath + '/android'
+  fs.mkdirSync(iosPath, { recursive: true })
+  fs.mkdirSync(androidPath, { recursive: true })
+
+  fs.writeFileSync(`${iosPath}/desc.json`, JSON.stringify({ ...passData }, null, 2));
+  fs.writeFileSync(`${androidPath}/desc.json`, JSON.stringify({ ...passData }, null, 2));
+
   const zipFilePath = `${_bundlePath}/${filename}`
   const zip = new AdmZip(zipFilePath);
   zip.extractAllTo(bundlePath, true)
+  fs.rename(`${bundlePath}/bundle/android`, `${androidPath}/bundle`, err => {
+    console.log('renameAndroidError', err)
+  })
+  fs.rename(`${bundlePath}/bundle/ios`, `${iosPath}/bundle`, err => {
+    console.log('renameIosError', err)
+  })
+
+
+  rmdir(`${bundlePath}/bundle`, err => {
+    console.log('remove bundle Err', err)
+  })
+
+  rmdir(`${_bundlePath}`, err => {
+    console.log('remove bundle Err', err)
+  })
   next()
 }
 
