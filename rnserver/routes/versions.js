@@ -4,6 +4,7 @@ const fs = require('fs')
 const Fse = require('fs-extra')
 const multer = require('multer')
 var AdmZip = require("adm-zip");
+const moment = require('moment')
 
 var router = express.Router();
 
@@ -15,11 +16,9 @@ const BUNDLE_PATH = './bundle'
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const { body } = req
-    console.log('params', req.params)
-    console.log('query', req.query)
-    console.log('file', file)
     const { biz = 'unknown-biz' } = body
-    const versionCode = `${biz}-${new Date().getTime()}`
+    console.log('saul Body>>>>>>>>>', body)
+    const versionCode = `${biz}_${moment(new Date()).format('YYYYMMDDHHmmSS')}`
     // const versionCode = new Date().getTime()
     // console.log('########', versionCode)
     const _bundlePath = `${tmpPath}/${versionCode}`
@@ -73,7 +72,7 @@ router.get('/bundleCheck', async function (req, res, next) {
 })
 
 function passBody(req, res, next) {
-  console.log('saul body', req.body)
+  // console.log('saul body', req.body)
   next()
 }
 
