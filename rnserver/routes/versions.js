@@ -6,6 +6,8 @@ const multer = require('multer')
 var AdmZip = require("adm-zip");
 const moment = require('moment')
 const rmdir = require('rimraf');
+const { exec } = require("child_process");
+
 
 var router = express.Router();
 
@@ -87,23 +89,40 @@ function transformToPackage(req, res, next) {
   const bundlePath = `${BUNDLE_PATH}/${versionCode}`
   const iosPath = bundlePath + '/ios'
   const androidPath = bundlePath + '/android'
+  // 创建平台 pack 文件夹
   fs.mkdirSync(iosPath, { recursive: true })
   fs.mkdirSync(androidPath, { recursive: true })
 
+  // 创建平台 pack desc 
   fs.writeFileSync(`${iosPath}/desc.json`, JSON.stringify({ ...passData }, null, 2));
   fs.writeFileSync(`${androidPath}/desc.json`, JSON.stringify({ ...passData }, null, 2));
 
+  // 分别解压到各自平台
   const zipFilePath = `${_bundlePath}/${filename}`
   const zip = new AdmZip(zipFilePath);
   zip.extractAllTo(bundlePath, true)
+
   fs.rename(`${bundlePath}/bundle/android`, `${androidPath}/bundle`, err => {
     console.log('renameAndroidError', err)
+
+    var zip_pack_android = new AdmZip()
+    zip_pack_android.addLocalFolder(`${androidPath}/bundle`)
+    zip_pack_android.writeZip(`${bundlePath}/pack_android.zip`)
+
+
   })
   fs.rename(`${bundlePath}/bundle/ios`, `${iosPath}/bundle`, err => {
     console.log('renameIosError', err)
+
+    var zip_pack_android = new AdmZip()
+    zip_pack_android.addLocalFolder(`${iosPath}/bundle`)
+    zip_pack_android.writeZip(`${bundlePath}/pack_ios.zip`)
+
   })
 
 
+
+  // 清理文件夹
   rmdir(`${bundlePath}/bundle`, err => {
     console.log('remove bundle Err', err)
   })
@@ -111,6 +130,10 @@ function transformToPackage(req, res, next) {
   rmdir(`${_bundlePath}`, err => {
     console.log('remove bundle Err', err)
   })
+
+  // 找到之前 4 个版本的文件，并生成 patch 包
+
+
   next()
 }
 
