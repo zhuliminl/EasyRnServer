@@ -21,16 +21,18 @@ var storage = multer.diskStorage({
     const { body } = req
     const { biz = 'unknown-biz' } = body
     console.log('saul Body>>>>>>>>>', body)
-    const versionCode = `${biz}_${moment(new Date()).format('YYYYMMDDHHmmSS')}`
+    // const versionCode = `${biz}_${moment(new Date()).format('YYYYMMDDHHmmSS')}`
+    const versionCode = `${moment(new Date()).format('YYYYMMDDHHmmSS')}`
     // const versionCode = new Date().getTime()
     // console.log('########', versionCode)
-    const _bundlePath = `${tmpPath}/${versionCode}`
+    const _bundlePath = `${tmpPath}/${biz}/${versionCode}`
     const filename = file.fieldname + path.extname(file.originalname)
     fs.mkdirSync(_bundlePath, { recursive: true })
     req.passData = {
       _bundlePath,
       versionCode,
       filename,
+      biz,
       body: req.body,
     }
     cb(null, _bundlePath)
@@ -86,8 +88,9 @@ async function transformToPackage(req, res, next) {
     _bundlePath = '',
     versionCode = '',
     filename = '',
+    biz = ''
   } = passData
-  const bundlePath = `${BUNDLE_PATH}/${versionCode}`
+  const bundlePath = `${BUNDLE_PATH}/${biz}/${versionCode}`
   const iosPath = bundlePath + '/ios'
   const androidPath = bundlePath + '/android'
   // 创建平台 pack 文件夹
@@ -109,15 +112,15 @@ async function transformToPackage(req, res, next) {
   const createPatchForPlatform = async (platorm) => {
     // 从历史版本中打出 patch 包
     try {
-      const packsAll = await Fse.readdir(BUNDLE_PATH)
+      const packsAll = await Fse.readdir(`${BUNDLE_PATH}/${biz}`)
       const packsBefore = packsAll.filter(item => item !== versionCode)
       // .map(item => `${BUNDLE_PATH}/${item}/pack_${platorm}.zip`)
 
       const createPatch = bsTool.diff
       const resAll = await Promise.all(packsBefore.map(pack => {
-        const pack_zip = `${BUNDLE_PATH}/${pack}/pack_${platorm}.zip`
-        const patch_file = `${BUNDLE_PATH}/${pack}/patch_${platorm}`
+        const pack_zip = `${BUNDLE_PATH}/${biz}/${pack}/pack_${platorm}.zip`
         const currenPack_zip = `${bundlePath}/pack_${platorm}.zip`
+        const patch_file = `${BUNDLE_PATH}/${biz}/${pack}/patch_${platorm}`
         return createPatch(pack_zip, currenPack_zip, patch_file)
       }))
       console.log('saul android resAll', resAll)
