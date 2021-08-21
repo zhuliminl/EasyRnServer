@@ -6,7 +6,7 @@ const multer = require('multer')
 var AdmZip = require("adm-zip");
 const moment = require('moment')
 const rmdir = require('rimraf');
-const { exec } = require("child_process");
+const bsTool = require('./utils/bsTool')
 
 
 var router = express.Router();
@@ -53,6 +53,7 @@ router.post('/bundleUpload', passBody, upload, transformToPackage, function (req
     return res.json({ code: 1001, message: '上传文件为空', data: body })
   }
 
+  console.log('saul >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
   res.json({ code: 200, message: '成功上传 RN 包 ', data: body })
 })
 
@@ -79,7 +80,7 @@ function passBody(req, res, next) {
   next()
 }
 
-function transformToPackage(req, res, next) {
+async function transformToPackage(req, res, next) {
   const { passData = {} } = req
   const {
     _bundlePath = '',
@@ -102,14 +103,30 @@ function transformToPackage(req, res, next) {
   const zip = new AdmZip(zipFilePath);
   zip.extractAllTo(bundlePath, true)
 
-  fs.rename(`${bundlePath}/bundle/android`, `${androidPath}/bundle`, err => {
+
+  const createPatchForPlatform = async (platorm) => {
+    // 从历史版本中打出 patch 包
+    try {
+      const packsAll = await Fse.readdir(BUNDLE_PATH)
+      const packsBefore = packsAll.filter(item => item !== versionCode).map(item => `${BUNDLE_PATH}/${item}/pack_${platorm}.zip`)
+      const createPatch = bsTool.diff
+      const resAll = await Promise.all(packsBefore.map(pack => {
+        return createPatch(pack, `${bundlePath}/pack_${platorm}.zip`, `${bundlePath}/patch_${platorm}`)
+      }))
+      console.log('saul android resAll', resAll)
+
+    } catch (error) {
+      console.log('saul ###', error)
+    }
+
+  }
+  fs.rename(`${bundlePath}/bundle/android`, `${androidPath}/bundle`, async (err) => {
     console.log('renameAndroidError', err)
 
     var zip_pack_android = new AdmZip()
     zip_pack_android.addLocalFolder(`${androidPath}/bundle`)
     zip_pack_android.writeZip(`${bundlePath}/pack_android.zip`)
-
-
+    createPatchForPlatform('android')
   })
   fs.rename(`${bundlePath}/bundle/ios`, `${iosPath}/bundle`, err => {
     console.log('renameIosError', err)
@@ -117,6 +134,7 @@ function transformToPackage(req, res, next) {
     var zip_pack_android = new AdmZip()
     zip_pack_android.addLocalFolder(`${iosPath}/bundle`)
     zip_pack_android.writeZip(`${bundlePath}/pack_ios.zip`)
+    createPatchForPlatform('ios')
 
   })
 
@@ -132,7 +150,30 @@ function transformToPackage(req, res, next) {
   })
 
   // 找到之前 4 个版本的文件，并生成 patch 包
+  /*
+  try {
+    const data = await bsTool.diff(
+      'bizBundles/WelecomPage_20210821115917/pack_android.zip',
+      'bizBundles/WelecomPage_20210821120429/pack_android.zip',
+      'bizBundles/WelecomPage_20210821120429/patch'
+    )
+    console.log('saul diff res', data)
 
+  } catch (error) {
+    console.log('saul bsdiff error', error)
+  }
+
+  try {
+    const data = await bsTool.patch(
+      'bizBundles/WelecomPage_20210821115917/pack_android.zip',
+      'bizBundles/WelecomPage_20210821120429/pack_android_merge.zip',
+      'bizBundles/WelecomPage_20210821120429/patch'
+    )
+
+  } catch (error) {
+    console.log('saul bsdiff error', error)
+  }
+  */
 
   next()
 }
