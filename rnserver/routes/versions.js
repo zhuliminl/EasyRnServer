@@ -104,14 +104,21 @@ async function transformToPackage(req, res, next) {
   zip.extractAllTo(bundlePath, true)
 
 
+  // 实际设计中， patch 应该由服务来调度，而不是打包过程中产生
+  // patch 应该只作为一个备选项。可随时脱离，降级。不应该强依赖
   const createPatchForPlatform = async (platorm) => {
     // 从历史版本中打出 patch 包
     try {
       const packsAll = await Fse.readdir(BUNDLE_PATH)
-      const packsBefore = packsAll.filter(item => item !== versionCode).map(item => `${BUNDLE_PATH}/${item}/pack_${platorm}.zip`)
+      const packsBefore = packsAll.filter(item => item !== versionCode)
+      // .map(item => `${BUNDLE_PATH}/${item}/pack_${platorm}.zip`)
+
       const createPatch = bsTool.diff
       const resAll = await Promise.all(packsBefore.map(pack => {
-        return createPatch(pack, `${bundlePath}/pack_${platorm}.zip`, `${bundlePath}/patch_${platorm}`)
+        const pack_zip = `${BUNDLE_PATH}/${pack}/pack_${platorm}.zip`
+        const patch_file = `${BUNDLE_PATH}/${pack}/patch_${platorm}`
+        const currenPack_zip = `${bundlePath}/pack_${platorm}.zip`
+        return createPatch(pack_zip, currenPack_zip, patch_file)
       }))
       console.log('saul android resAll', resAll)
 
