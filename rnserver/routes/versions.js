@@ -90,6 +90,7 @@ async function transformToPackage(req, res, next) {
     filename = '',
     biz = ''
   } = passData
+  console.log('saul ##############################', biz)
   const bundlePath = `${BUNDLE_PATH}/${biz}/${versionCode}`
   const iosPath = bundlePath + '/ios'
   const androidPath = bundlePath + '/android'
