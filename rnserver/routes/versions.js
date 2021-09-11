@@ -59,26 +59,9 @@ router.post('/bundleUpload', passBody, upload, transformToPackage, function (req
   res.json({ code: 200, message: '成功上传 RN 包 ', data: body })
 })
 
-router.get('/bundleCheck', async function (req, res, next) {
-  const { query = {} } = req
-  const { version = '' } = query
-  const files = await Fse.readdir(__dirname + '/../bundles');
-  const baseUrl = 'http://192.168.3.27:3000/'
-  const _bundlePaths = files.map(item => baseUrl + item)
-
-  if (!version) {
-    return res.json({ code: 1001, message: '版本信息为空', })
-  }
-
-  return res.json({
-    code: 200, message: '返回最新包列表', data: {
-      _bundlePaths
-    }
-  })
-})
 
 function passBody(req, res, next) {
-  // console.log('saul body', req.body)
+  console.log('saul body', req.body)
   next()
 }
 
@@ -188,6 +171,50 @@ async function transformToPackage(req, res, next) {
 
   next()
 }
+
+router.get('/bundleCheck', async function (req, res, next) {
+  const { query = {} } = req
+  const { version = '' } = query
+  // const files = await Fse.readdir(__dirname + '/../bundles');
+  // const baseUrl = 'http://192.168.3.27:3000/'
+  // const _bundlePaths = files.map(item => baseUrl + item)
+
+  if (!version) {
+    return res.json({ code: 1001, message: '版本信息为空', })
+  }
+
+  return res.json({
+    code: 200, message: '返回最新包列表', data: {
+      // _bundlePaths
+    }
+  })
+})
+
+router.get('/bundles', async function (req, res, next) {
+  const { query = {} } = req
+  const { version = '' } = query
+  const bizs = await Fse.readdir(BUNDLE_PATH)
+  const bizsVersions = await Promise.all(bizs.map(async (biz) => {
+    const vpath = await Fse.readdir(`${BUNDLE_PATH}/${biz}`)
+    const vpathNew = vpath[0]
+    const pathAndroid = vpathNew + '/pack_android.zip'
+    const pathIos = vpathNew + '/pack_ios.zip'
+    const baseUrl = 'http://localhost:3000/'
+    return {
+      biz,
+      downloadUrl: {
+        android: baseUrl + biz + '/' + pathAndroid,
+        ios: baseUrl + biz + '/' + pathIos,
+      }
+    }
+  }))
+
+  return res.json({
+    code: 200, message: '返回最新包列表', data: {
+      bizsVersions
+    }
+  })
+})
 
 
 
